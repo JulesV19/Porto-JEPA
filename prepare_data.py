@@ -23,6 +23,7 @@ import time
 import numpy as np
 
 from eda import CSV_PATH, SAMPLE_INTERVAL_S, JUMP_SPEED_KMH, haversine_km
+from jepa.features import Normalizer
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -70,9 +71,9 @@ def clean_trip(arr):
     return np.asarray(out, dtype=np.float64), n_jumps
 
 
-def run(csv_path, limit, out_path, log_every=100_000):
+def run(csv_path, limit, out_path, stats_path, log_every=100_000):
     t0 = time.time()
-    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
 
     points_chunks = []          # arrays (Ni, 2)
     lengths = []                # Ni par trajet retenu
@@ -137,6 +138,11 @@ def run(csv_path, limit, out_path, log_every=100_000):
         origin_stand=np.asarray(origin_stands, dtype=np.int16),
     )
 
+    # Statistiques de features (mean/std) -> feat_stats.npz, prêtes pour Colab.
+    if points.shape[0] > 0:
+        norm = Normalizer.fit(points, offsets)
+        norm.save(stats_path)
+
     elapsed = time.time() - t0
     summary = {
         "elapsed_s": round(elapsed, 1),
@@ -148,6 +154,7 @@ def run(csv_path, limit, out_path, log_every=100_000):
         "reject_reasons": reject,
         "total_points": int(points.shape[0]),
         "out": out_path,
+        "stats_out": stats_path,
     }
     print(json.dumps(summary, indent=2, ensure_ascii=False), flush=True)
     return summary
@@ -158,7 +165,8 @@ if __name__ == "__main__":
     ap.add_argument("--limit", type=int, default=None,
                     help="nombre de lignes CSV à lire (défaut : tout)")
     ap.add_argument("--out", default=os.path.join(DATA_DIR, "trips.npz"))
+    ap.add_argument("--stats-out", default=os.path.join(DATA_DIR, "feat_stats.npz"))
     args = ap.parse_args()
     if not os.path.exists(CSV_PATH):
         raise SystemExit(f"train.csv introuvable à {CSV_PATH}")
-    run(CSV_PATH, args.limit, args.out)
+    run(CSV_PATH, args.limit, args.out, args.stats_out)
