@@ -12,10 +12,10 @@ Workflow :
 
 import nbformat as nbf
 
-# À adapter par l'utilisateur (ou laisser tel quel et éditer dans Colab).
-REPO_URL = "https://github.com/<user>/<repo>.git"
-REPO_DIR = "jepa-taxi"
-DRIVE_DATA = "/content/drive/MyDrive/jepa-taxi/data"   # cache sur le Drive
+REPO_URL = "https://github.com/JulesV19/Porto-JEPA.git"
+REPO_DIR = "Porto-JEPA"
+# Le cache est cherché automatiquement dans le Drive (voir cellule 3) —
+# pas besoin de connaître le nom exact du dossier.
 
 nb = nbf.v4.new_notebook()
 cells = []
@@ -24,13 +24,14 @@ code = lambda s: cells.append(nbf.v4.new_code_cell(s))
 
 md(f"""# JEPA trajectoires Porto — entraînement GPU (Colab)
 
-Code cloné depuis GitHub, données lues depuis Google Drive. Le code est
-**device-agnostic** : le GPU CUDA de Colab est détecté automatiquement.
+Code cloné depuis [github.com/JulesV19/Porto-JEPA](https://github.com/JulesV19/Porto-JEPA),
+données lues depuis Google Drive. Le code est **device-agnostic** : le GPU CUDA
+de Colab est détecté automatiquement.
 
 **Prérequis (une fois, en local puis sur Drive) :**
 1. Générer le cache : `python prepare_data.py --limit 200000`
-2. Déposer `data/trips.npz` et `data/feat_stats.npz` dans
-   `MyDrive/jepa-taxi/data/` sur ton Google Drive.
+2. Déposer `trips.npz` et `feat_stats.npz` n'importe où dans ton Google Drive
+   (la cellule 3 les retrouve automatiquement).
 
 **Runtime :** *Exécution → Modifier le type d'exécution → GPU*.""")
 
@@ -48,25 +49,28 @@ REPO_URL = "{REPO_URL}"   # <-- mets l'URL de TON repo
 code("# 2) Dépendances (torch déjà présent sur Colab)\n"
      "!pip -q install scikit-learn matplotlib numpy")
 
-code(f"""# 3) Monter Google Drive (cache de données)
+code("""# 3) Monter le Drive et localiser automatiquement le cache
 from google.colab import drive
+import glob, os
 drive.mount('/content/drive')
-DATA = "{DRIVE_DATA}"
-import os
-print('trips.npz     :', os.path.exists(os.path.join(DATA, 'trips.npz')))
-print('feat_stats.npz:', os.path.exists(os.path.join(DATA, 'feat_stats.npz')))""")
 
-code(f"""# 4) Sanity overfit (rapide) — vérifie que ça apprend sans collapse
-!python -m jepa.train --overfit \\
-    --data-path {DRIVE_DATA}/trips.npz --feat-stats {DRIVE_DATA}/feat_stats.npz""")
+hits = glob.glob('/content/drive/MyDrive/**/trips.npz', recursive=True)
+assert hits, "trips.npz introuvable dans le Drive — dépose-le puis relance."
+DATA = os.path.dirname(hits[0])
+STATS = os.path.join(DATA, 'feat_stats.npz')
+assert os.path.exists(STATS), f"feat_stats.npz manquant à côté de trips.npz ({DATA})"
+print('Cache trouvé dans :', DATA)""")
 
-code(f"""# 5) Entraînement sur GPU (ajuste subset/epochs/batch selon le GPU)
+code("""# 4) Sanity overfit (rapide) — vérifie que ça apprend sans collapse
+!python -m jepa.train --overfit --data-path {DATA}/trips.npz --feat-stats {STATS}""")
+
+code("""# 5) Entraînement sur GPU (ajuste subset/epochs/batch selon le GPU)
 !python -m jepa.train --subset 200000 --epochs 20 --batch-size 256 \\
-    --data-path {DRIVE_DATA}/trips.npz --feat-stats {DRIVE_DATA}/feat_stats.npz""")
+    --data-path {DATA}/trips.npz --feat-stats {STATS}""")
 
-code(f"""# 6) Évaluation (4 protocoles) + figures
+code("""# 6) Évaluation (4 protocoles) + figures
 !python -m jepa.eval --ckpt checkpoints/jepa.pt --n-eval 8000 \\
-    --data-path {DRIVE_DATA}/trips.npz --feat-stats {DRIVE_DATA}/feat_stats.npz
+    --data-path {DATA}/trips.npz --feat-stats {STATS}
 from IPython.display import Image
 Image('eval_out/clusters_map.png')""")
 

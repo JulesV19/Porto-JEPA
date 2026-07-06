@@ -96,11 +96,11 @@ lente). Le repo ne contient que le **code** ; les données passent par **Google
 Drive**. Workflow :
 
 1. En local : `python prepare_data.py --limit 200000` (rapide).
-2. Déposer `data/trips.npz` + `data/feat_stats.npz` dans `MyDrive/jepa-taxi/data/`.
-3. Sur Colab : ouvrir [colab_train.ipynb](colab_train.ipynb) — il `git clone` le
-   repo, monte le Drive, puis entraîne/évalue sur GPU. `train.csv` (2 Go) n'est
-   **pas** requis sur Colab.
+2. Déposer `trips.npz` + `feat_stats.npz` n'importe où dans ton Google Drive.
+3. Sur Colab : ouvrir [colab_train.ipynb](colab_train.ipynb) — il `git clone`
+   [Porto-JEPA](https://github.com/JulesV19/Porto-JEPA), monte le Drive, localise
+   le cache automatiquement, puis entraîne/évalue sur GPU. `train.csv` (2 Go)
+   n'est **pas** requis sur Colab.
 
-Les chemins de données sont surchargeables en CLI (`--data-path`, `--feat-stats`)
-pour pointer vers le Drive. Régénérer le notebook : `python build_colab.py`
-(éditer `REPO_URL` dedans).
+Les chemins de données sont surchargeables en CLI (`--data-path`, `--feat-stats`).
+Régénérer le notebook : `python build_colab.py`.
