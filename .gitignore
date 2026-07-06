@@ -1,0 +1,26 @@
+# Données brutes (2 Go) — jamais sur GitHub
+train.csv
+
+# Caches générés (données : via Google Drive sur Colab)
+data/
+eda_cache.npz
+eda_cache.json
+
+# Sorties d'entraînement / évaluation
+checkpoints/
+eval_out/
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# OS / éditeurs
+.DS_Store
+.vscode/
+.idea/
+
+# Environnements virtuels
+.venv/
+venv/
+env/
